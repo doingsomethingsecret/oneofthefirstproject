@@ -1,0 +1,96 @@
+---
+- name: Create /app directory
+  ansible.builtin.file:
+    path: /app
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+
+- name: Extract project
+  ansible.builtin.unarchive:
+    src: /home/unknown/Videos/notyourjob/noob/atlas-ai-project.zip
+    dest: /app/
+    remote_src: no
+  become: yes
+  become_user: root
+
+- name: Move files to /app
+  ansible.builtin.shell: |
+    cd /app
+    cp -r Atlas-AI-Project-main/* .
+    cp -r Atlas-AI-Project-main/.* . 2>/dev/null || true
+    rm -rf Atlas-AI-Project-main
+  become: yes
+  become_user: root
+
+- name: Set ownership
+  ansible.builtin.file:
+    path: /app
+    owner: ubuntu
+    group: ubuntu
+    recurse: yes
+
+- name: Verify app-lite.py exists
+  ansible.builtin.stat:
+    path: /app/app-lite.py
+  register: app_lite
+
+- name: Fail if missing
+  ansible.builtin.fail:
+    msg: "Project files not found in /app/"
+  when: not app_lite.stat.exists
+
+- name: Fix PROJECT_ROOT path
+  ansible.builtin.lineinfile:
+    path: /app/app-lite.py
+    regexp: 'Path\(__file__\)\.resolve\(\)\.parent\.parent'
+    line: 'Path(__file__).resolve().parent'
+
+- name: Upload docker-compose.app.yml
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/docker-compose.app.yml
+    dest: /app/docker-compose.app.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Upload Dockerfile
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/Dockerfile
+    dest: /app/Dockerfile
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Upload .dockerignore
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/.dockerignore
+    dest: /app/.dockerignore
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Upload requirements.txt
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/requirements.txt
+    dest: /app/requirements.txt
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Deploy App
+  ansible.builtin.shell: |
+    cd /app
+    docker compose down 2>/dev/null || true
+    FLASK_SECRET_KEY={{ vault_flask_secret_key }} docker compose -f docker-compose.app.yml up -d --build
+  become: yes
+  become_user: ubuntu
+
+- name: Wait for app
+  ansible.builtin.wait_for:
+    port: 5000
+    host: 0.0.0.0
+    timeout: 60
+    state: started
+  become: no
+  become_user: ubuntu
