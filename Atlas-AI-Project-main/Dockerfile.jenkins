@@ -1,7 +1,7 @@
 FROM jenkins/jenkins:lts-alpine
 
 USER root
-RUN apk add --no-cache python3 py3-pip py3-setuptools py3-wheel curl unzip openjdk17
+RUN apk add --no-cache python3 py3-pip py3-setuptools py3-wheel curl unzip openjdk17 docker-cli bash
 RUN pip3 install --break-system-packages flake8 pytest
 
 # Install SonarQube Scanner
