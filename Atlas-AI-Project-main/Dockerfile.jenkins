@@ -1,6 +1,14 @@
 FROM jenkins/jenkins:lts-alpine
 
 USER root
-RUN apk add --no-cache python3 py3-pip py3-setuptools py3-wheel
+RUN apk add --no-cache python3 py3-pip py3-setuptools py3-wheel curl unzip
 RUN pip3 install --break-system-packages flake8 pytest
+
+# Install SonarQube Scanner
+RUN curl -fsSL https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip -o /tmp/sonar-scanner.zip && \
+    unzip /tmp/sonar-scanner.zip -d /opt && \
+    mv /opt/sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner && \
+    ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/bin/sonar-scanner && \
+    rm /tmp/sonar-scanner.zip
+
 USER jenkins
