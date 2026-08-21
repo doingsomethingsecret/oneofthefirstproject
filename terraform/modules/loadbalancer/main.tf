@@ -105,22 +105,6 @@ resource "aws_lb_target_group" "sonarqube" {
   tags = { Name = "atlas-ai-sonarqube-tg" }
 }
 
-resource "aws_lb_target_group" "grafana" {
-  name        = "atlas-ai-grafana-tg"
-  port        = 3000
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "instance"
-  health_check {
-    path                = "/api/health"
-    matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-  }
-  tags = { Name = "atlas-ai-grafana-tg" }
-}
 
 resource "aws_lb_target_group_attachment" "app" {
   target_group_arn = aws_lb_target_group.app.arn
@@ -280,3 +264,79 @@ resource "aws_lb_listener_rule" "grafana_https" {
 
 output "alb_dns_name" { value = aws_lb.main.dns_name }
 output "alb_zone_id"  { value = aws_lb.main.zone_id }
+
+resource "aws_lb_target_group" "prometheus" {
+  name        = "atlas-ai-prometheus-tg"
+  port        = 9090
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "instance"
+  health_check {
+    path                = "/"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+  tags = { Name = "atlas-ai-prometheus-tg" }
+}
+
+resource "aws_lb_target_group_attachment" "prometheus" {
+  target_group_arn = aws_lb_target_group.prometheus.arn
+  target_id        = var.monitoring_id
+  port             = 9090
+}
+
+resource "aws_lb_listener_rule" "prometheus_http" {
+  count        = var.certificate_arn == "" ? 1 : 0
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 40
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.prometheus.arn
+  }
+  condition {
+    path_pattern {
+      values = ["/prometheus/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "prometheus_https" {
+  count        = var.certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 40
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.prometheus.arn
+  }
+  condition {
+    path_pattern {
+      values = ["/prometheus/*"]
+    }
+  }
+}
+
+resource "aws_lb_target_group" "grafana" {
+  name        = "atlas-ai-grafana-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "instance"
+  health_check {
+    path                = "/api/health"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+  tags = { Name = "atlas-ai-grafana-tg" }
+}
+
+resource "aws_lb_target_group_attachment" "grafana" {
+  target_group_arn = aws_lb_target_group.grafana.arn
+  target_id        = var.monitoring_id
+  port             = 3000
+}
