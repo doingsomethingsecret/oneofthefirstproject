@@ -1,7 +1,5 @@
-# ===========================================
-# IAM MODULE
-# Creates: IAM Role + Instance Profile for EC2 instances
-# ===========================================
+# IAM Role + Instance Profile for EC2 instances
+
 
 variable "environment" {
   description = "Environment name"
