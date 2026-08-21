@@ -20,7 +20,7 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
-                    python3 -m flake8 app-lite.py src/ --max-line-length=120 --exclude=__pycache__
+                    python3 -m flake8 Atlas-AI-Project-main/app-lite.py Atlas-AI-Project-main/src/ --max-line-length=120 --exclude=__pycache__
                 '''
             }
         }
@@ -28,7 +28,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    python3 -m pytest tests/ -v || echo "No tests found"
+                    python3 -m pytest Atlas-AI-Project-main/tests/ -v || echo "No tests found"
                 '''
             }
         }
@@ -39,7 +39,7 @@ pipeline {
                     sh '''
                         sonar-scanner \
                             -Dsonar.projectKey=atlas-ai \
-                            -Dsonar.sources=. \
+                            -Dsonar.sources=Atlas-AI-Project-main \
                             -Dsonar.host.url=${SONARQUBE_URL} \
                             -Dsonar.login=${SONARQUBE_TOKEN}
                     '''
@@ -50,7 +50,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build(IMAGE_NAME)
+                    docker.build(IMAGE_NAME, '-f Atlas-AI-Project-main/Dockerfile.jenkins Atlas-AI-Project-main')
                 }
             }
         }
@@ -70,9 +70,9 @@ pipeline {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentials', credentialsId: 'aws-credentials']]) {
                     sh '''
-                        ansible-playbook -i ansible/inventory.ini ansible/site.yml \
+                        ansible-playbook -i Atlas-AI-Project-main/ansible/inventory.ini Atlas-AI-Project-main/ansible/site.yml \
                             --extra-vars "docker_image=${IMAGE_NAME} flask_secret_key=${FLASK_SECRET_KEY}" \
-                            --vault-password-file .vault_password
+                            --vault-password-file Atlas-AI-Project-main/ansible/.vault_password
                     '''
                 }
             }
