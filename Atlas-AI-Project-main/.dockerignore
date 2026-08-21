@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.git
+.venv
+node_modules
+tests
+evaluation
+training
+Dockerfile
+docker-compose.yml

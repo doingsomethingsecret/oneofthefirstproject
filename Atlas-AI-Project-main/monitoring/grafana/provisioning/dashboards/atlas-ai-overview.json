@@ -1,0 +1,36 @@
+{
+  "title": "Atlas AI Overview",
+  "panels": [
+    {
+      "id": 1,
+      "title": "EC2 CPU Utilization",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "yaxes": [
+        {"unit": "percent", "max": 100, "min": 0},
+        {"show": false}
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "yaxes": [
+        {"unit": "percent", "max": 100, "min": 0},
+        {"show": false}
+      ]
+    }
+  ],
+  "refresh": "30s"
+}
