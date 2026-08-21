@@ -5,7 +5,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         AWS_CREDENTIALS = credentials('aws-credentials')
         FLASK_SECRET_KEY = credentials('flask-secret-key')
-        SONARQUBE_URL = 'http://13.201.130.146:9000'
+        SONARQUBE_URL = 'http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com/sonar'
         SONARQUBE_TOKEN = credentials('sonarqube-token')
         IMAGE_NAME = "atlas-ai:${BUILD_NUMBER}"
     }
@@ -20,7 +20,7 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
-                    pip install flake8
+                    python3 -m pip install flake8
                     flake8 app-lite.py src/ --max-line-length=120 --exclude=__pycache__
                 '''
             }
@@ -29,7 +29,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    pip install pytest
+                    python3 -m pip install pytest
                     pytest tests/ -v || echo "No tests found"
                 '''
             }
