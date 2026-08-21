@@ -1,0 +1,69 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Allow SSH from bastion
+  ansible.builtin.ufw:
+    rule: allow
+    port: '22'
+    from: 10.0.1.0/24
+    proto: tcp
+
+- name: Allow app port
+  ansible.builtin.ufw:
+    rule: allow
+    port: '5000'
+    from: 10.0.1.0/24
+    proto: tcp
+  when: inventory_hostname in ['app']
+
+- name: Allow jenkins port
+  ansible.builtin.ufw:
+    rule: allow
+    port: '8080'
+    from: 10.0.1.0/24
+    proto: tcp
+  when: inventory_hostname in ['jenkins']
+
+- name: Allow sonarqube port
+  ansible.builtin.ufw:
+    rule: allow
+    port: '9000'
+    from: 10.0.1.0/24
+    proto: tcp
+  when: inventory_hostname in ['sonarqube']
+
+- name: Allow grafana port
+  ansible.builtin.ufw:
+    rule: allow
+    port: '3000'
+    from: 10.0.1.0/24
+    proto: tcp
+  when: inventory_hostname in ['monitoring']
+
+- name: Allow prometheus port
+  ansible.builtin.ufw:
+    rule: allow
+    port: '9090'
+    from: 10.0.1.0/24
+    proto: tcp
+  when: inventory_hostname in ['monitoring']
+
+- name: Deny all incoming
+  ansible.builtin.ufw:
+    policy: deny
+    direction: incoming
+
+- name: Allow all outgoing
+  ansible.builtin.ufw:
+    policy: allow
+    direction: outgoing
+
+- name: Enable UFW
+  ansible.builtin.ufw:
+    state: enabled
