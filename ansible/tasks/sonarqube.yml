@@ -1,0 +1,23 @@
+---
+- name: Create /app directory
+  ansible.builtin.file:
+    path: /app
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+
+- name: Upload SonarQube compose
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/docker-compose.sonarqube.yml
+    dest: /app/docker-compose.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Deploy SonarQube
+  ansible.builtin.shell: |
+    cd /app
+    docker compose down 2>/dev/null || true
+    SONAR_JDBC_PASSWORD={{ vault_sonarqube_password }} docker compose up -d
+  become: yes
+  become_user: ubuntu

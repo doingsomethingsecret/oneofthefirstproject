@@ -1,0 +1,82 @@
+---
+- name: Install Docker and tools
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - python3
+      - python3-pip
+      - python3-venv
+      - git
+      - curl
+      - unzip
+      - ufw
+      - openssh-server
+    state: present
+    update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Install Docker Compose V2
+  ansible.builtin.shell: |
+    mkdir -p ~/.docker/cli-plugins
+    curl -SL https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+    chmod +x ~/.docker/cli-plugins/docker-compose
+  become: no
+  become_user: ubuntu
+
+- name: Start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add ubuntu to docker group
+  ansible.builtin.user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+- name: Create devops user
+  ansible.builtin.user:
+    name: devops
+    shell: /bin/bash
+    groups: sudo, docker
+    append: yes
+    create_home: yes
+
+- name: Add SSH keys
+  ansible.builtin.authorized_key:
+    user: "{{ item }}"
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  loop:
+    - ubuntu
+    - devops
+
+- name: Harden SSH
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: "^PermitRootLogin", line: "PermitRootLogin no" }
+    - { regexp: "^PasswordAuthentication", line: "PasswordAuthentication no" }
+
+- name: Start SSH
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: yes
+
+- name: Allow SSH in UFW
+  ansible.builtin.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+  ignore_errors: yes
+
+- name: Enable UFW
+  ansible.builtin.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+  ignore_errors: yes

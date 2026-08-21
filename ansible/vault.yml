@@ -1,0 +1,5 @@
+vault_flask_secret_key: "atlas-ai-devops-project-tkxel"
+vault_jenkins_admin_password: "Usama@786"
+vault_sonarqube_password: "Usama@786"
+vault_grafana_password: "Usama@786"
+vault_sonarqube_admin_password: "Usama@786"

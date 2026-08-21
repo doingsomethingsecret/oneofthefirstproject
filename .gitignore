@@ -1,0 +1,22 @@
+
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!terraform.tfvars.example
+terraform/terraform.tfvars
+
+ansible/.vault_password
+secretinfo.txt
+
+*.pem
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+
+atlas-ai-project.zip

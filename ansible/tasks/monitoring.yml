@@ -1,0 +1,40 @@
+---
+- name: Create /app directory
+  ansible.builtin.file:
+    path: /app
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+
+- name: Create monitoring tarball locally
+  ansible.builtin.shell: tar -czf /tmp/monitoring.tar.gz -C /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main monitoring
+  delegate_to: localhost
+  become: no
+
+- name: Upload monitoring tarball
+  ansible.builtin.copy:
+    src: /tmp/monitoring.tar.gz
+    dest: /tmp/monitoring.tar.gz
+    mode: '0644'
+
+- name: Extract monitoring files
+  ansible.builtin.unarchive:
+    src: /tmp/monitoring.tar.gz
+    dest: /app/
+    remote_src: yes
+
+- name: Upload monitoring compose
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/docker-compose.monitoring.yml
+    dest: /app/docker-compose.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Deploy Monitoring
+  ansible.builtin.shell: |
+    cd /app
+    docker compose down 2>/dev/null || true
+    GF_SECURITY_ADMIN_PASSWORD={{ vault_grafana_password }} docker compose up -d
+  become: yes
+  become_user: ubuntu

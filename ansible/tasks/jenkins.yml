@@ -1,0 +1,23 @@
+---
+- name: Create /app directory
+  ansible.builtin.file:
+    path: /app
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+
+- name: Upload Jenkins compose
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/docker-compose.jenkins.yml
+    dest: /app/docker-compose.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Deploy Jenkins
+  ansible.builtin.shell: |
+    cd /app
+    docker compose down 2>/dev/null || true
+    JENKINS_ADMIN_PASSWORD={{ vault_jenkins_admin_password }} docker compose up -d
+  become: yes
+  become_user: ubuntu
