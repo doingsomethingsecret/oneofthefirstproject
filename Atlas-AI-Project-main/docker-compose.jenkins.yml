@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   jenkins:
-    image: jenkins-lts-python:latest
     build:
       context: .
       dockerfile: Dockerfile.jenkins
