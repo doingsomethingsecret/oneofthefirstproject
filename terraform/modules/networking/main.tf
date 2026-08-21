@@ -1,7 +1,5 @@
-# ===========================================
-# NETWORKING MODULE
-# Creates: VPC, Subnets, Internet Gateway, NAT Gateway, Route Tables
-# ===========================================
+# VPC, Subnets, Internet Gateway, NAT Gateway, Route Tables
+
 
 variable "vpc_cidr" {
   description = "VPC IP address range"

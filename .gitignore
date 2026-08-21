@@ -1,15 +1,15 @@
-# Terraform
+
 .terraform/
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
 *.tfvars
 !terraform.tfvars.example
+terraform/terraform.tfvars
 
-# Ansible
 ansible/.vault_password
 
-# Sensitive files
+
 *.pem
 *.key
 
@@ -17,14 +17,6 @@ ansible/.vault_password
 .DS_Store
 Thumbs.db
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
 
-# Large files
+
 atlas-ai-project.zip
-
-# Backup files
-*.bak
