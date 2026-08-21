@@ -5,7 +5,7 @@ pipeline {
         FLASK_SECRET_KEY = credentials('flask-secret-key')
         SONARQUBE_URL = 'http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com/sonar'
         SONARQUBE_TOKEN = credentials('sonarqube-token')
-        IMAGE_NAME = "atlas-ai:${BUILD_NUMBER}"
+        IMAGE_NAME = "iemusama/atlas-ai:${BUILD_NUMBER}"
         // SSH + deploy targets (key lives in the persisted Jenkins volume)
         SSH_KEY = '/var/jenkins_home/.ssh/tkxel_devops_project.pem'
         BASTION_IP = '65.2.130.169'
@@ -41,9 +41,17 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        docker.image(IMAGE_NAME).push()
-                        docker.image(IMAGE_NAME).push('latest')
+                    // Try to push; if the DockerHub repo doesn't exist yet (DockerHub doesn't
+                    // auto-create it), warn instead of failing so the deployment still completes.
+                    try {
+                        docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                            docker.image(IMAGE_NAME).push()
+                            docker.image(IMAGE_NAME).push('latest')
+                        }
+                        echo 'DockerHub push succeeded.'
+                    } catch (Exception ex) {
+                        echo "WARN: DockerHub push could not complete: ${ex.getMessage()}"
+                        echo 'Continuing to Deploy (app is deployed directly from source). Create the public iemusama/atlas-ai repo on DockerHub to enable registry pushes here.'
                     }
                 }
             }
