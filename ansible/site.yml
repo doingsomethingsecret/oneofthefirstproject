@@ -1,0 +1,43 @@
+---
+- name: Setup Bastion
+  hosts: bastion
+  become: yes
+  vars_files: [vault.yml]
+  tasks: [import_tasks: tasks/bastion.yml]
+
+- name: Setup App Server
+  hosts: app
+  become: yes
+  vars_files: [vault.yml]
+  tasks:
+    - import_tasks: tasks/common.yml
+    - import_tasks: tasks/app.yml
+
+- name: Setup Jenkins
+  hosts: jenkins
+  become: yes
+  vars_files: [vault.yml]
+  tasks:
+    - import_tasks: tasks/common.yml
+    - import_tasks: tasks/jenkins.yml
+
+- name: Setup SonarQube
+  hosts: sonarqube
+  become: yes
+  vars_files: [vault.yml]
+  tasks:
+    - import_tasks: tasks/common.yml
+    - import_tasks: tasks/sonarqube.yml
+
+- name: Setup Monitoring
+  hosts: monitoring
+  become: yes
+  vars_files: [vault.yml]
+  tasks:
+    - import_tasks: tasks/common.yml
+    - import_tasks: tasks/monitoring.yml
+
+- name: Setup Firewall
+  hosts: app,jenkins,sonarqube,monitoring
+  become: yes
+  tasks: [import_tasks: tasks/firewall.yml]
