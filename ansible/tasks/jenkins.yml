@@ -14,6 +14,21 @@
     group: ubuntu
     mode: '0644'
 
+- name: Upload Jenkins Dockerfile
+  ansible.builtin.copy:
+    src: /home/unknown/Videos/notyourjob/noob/Atlas-AI-Project-main/Dockerfile.jenkins
+    dest: /app/Dockerfile.jenkins
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Build Jenkins image with python3
+  ansible.builtin.shell: |
+    cd /app
+    docker compose build --no-cache
+  become: yes
+  become_user: ubuntu
+
 - name: Deploy Jenkins
   ansible.builtin.shell: |
     cd /app
