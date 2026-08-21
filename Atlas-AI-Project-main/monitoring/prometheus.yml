@@ -2,35 +2,40 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets: ['localhost:9093']
-
 rule_files:
-  - /etc/prometheus/alerts.yml
+  - /etc/prometheus/prometheus/alerts.yml
 
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
-
-  - job_name: 'atlas-ai'
-    static_configs:
-      - targets: ['atlas-ai:5000']
-    metrics_path: '/api/metrics'
-
-  - job_name: 'jenkins'
-    static_configs:
-      - targets: ['jenkins:8080']
-    metrics_path: '/prometheus'
-
-  - job_name: 'sonarqube'
-    static_configs:
-      - targets: ['sonarqube:9000']
-    metrics_path: '/api/metrics'
+      - targets: ['prometheus:9090']
+    metrics_path: /prometheus/metrics
 
   - job_name: 'grafana'
     static_configs:
       - targets: ['grafana:3000']
-    metrics_path: '/api/health'
+    metrics_path: /metrics
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Blackbox HTTP availability probes for every external service (via the ALB).
+  - job_name: 'services'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com/api/health  # Atlas AI app
+          - http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com/jenkins/     # Jenkins
+          - http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com/sonar/       # SonarQube
+          - http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com/grafana/      # Grafana
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+

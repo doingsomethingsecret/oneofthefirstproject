@@ -1,48 +1,27 @@
 groups:
-  - name: atlas-ai-alerts
+  - name: atlas-ai
     interval: 30s
     rules:
       - alert: InstanceDown
         expr: up == 0
-        for: 5m
-        labels:
-          severity: critical
+        for: 1m
+        labels: { severity: critical }
         annotations:
-          summary: "Instance {{ $labels.instance }} is down"
-          description: "{{ $labels.instance }} has been down for more than 5 minutes."
+          summary: "{{ $labels.instance }} is down"
+          description: "{{ $labels.job }}/{{ $labels.instance }} unreachable for more than 1m"
 
       - alert: HighCPUUsage
-        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High CPU usage on {{ $labels.instance }}"
-          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
-
-      - alert: JenkinsDown
-        expr: up{job="jenkins"} == 0
+        expr: 100 - avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100 > 80
         for: 5m
-        labels:
-          severity: critical
+        labels: { severity: warning }
         annotations:
-          summary: "Jenkins is down"
-          description: "Jenkins has been unreachable for more than 5 minutes."
-
-      - alert: SonarQubeDown
-        expr: up{job="sonarqube"} == 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "SonarQube is down"
-          description: "SonarQube has been unreachable for more than 5 minutes."
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}%"
 
       - alert: HighMemoryUsage
-        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
-        for: 10m
-        labels:
-          severity: warning
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 90
+        for: 5m
+        labels: { severity: warning }
         annotations:
-          summary: "High memory usage on {{ $labels.instance }}"
-          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+          summary: "High memory on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}%"

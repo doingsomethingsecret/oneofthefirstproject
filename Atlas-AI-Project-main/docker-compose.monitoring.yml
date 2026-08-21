@@ -6,7 +6,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -33,6 +33,25 @@ services:
     networks:
       - devops-net
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host.*|etc)(/.*)?$'
+    restart: unless-stopped
+    networks:
+      - devops-net
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    restart: unless-stopped
+    networks:
+      - devops-net
+
 volumes:
   prometheus_data:
   grafana_data:
@@ -40,3 +59,4 @@ volumes:
 networks:
   devops-net:
     driver: bridge
+
