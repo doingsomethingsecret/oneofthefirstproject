@@ -20,7 +20,7 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
-                    flake8 app-lite.py src/ --max-line-length=120 --exclude=__pycache__
+                    python3 -m flake8 app-lite.py src/ --max-line-length=120 --exclude=__pycache__
                 '''
             }
         }
@@ -28,7 +28,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    pytest tests/ -v || echo "No tests found"
+                    python3 -m pytest tests/ -v || echo "No tests found"
                 '''
             }
         }
