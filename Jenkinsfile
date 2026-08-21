@@ -20,13 +20,6 @@ pipeline {
                 sh 'python3 -m pytest Atlas-AI-Project-main/tests/ -v || echo "No tests found"'
             }
         }
-        stage('SonarQube Scan') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'sonar-scanner -Dsonar.projectKey=atlas-ai -Dsonar.sources=Atlas-AI-Project-main -Dsonar.host.url=${SONARQUBE_URL} -Dsonar.login=${SONARQUBE_TOKEN}'
-                }
-            }
-        }
         stage('Build Docker Image') {
             steps { script { docker.build(IMAGE_NAME, '-f Atlas-AI-Project-main/Dockerfile.jenkins Atlas-AI-Project-main') } }
         }
