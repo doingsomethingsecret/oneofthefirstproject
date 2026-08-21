@@ -1,0 +1,27 @@
+---
+- name: Create devops user
+  ansible.builtin.user:
+    name: devops
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    create_home: yes
+
+- name: Add SSH key
+  ansible.builtin.authorized_key:
+    user: devops
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+- name: Harden SSH
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: "^PermitRootLogin", line: "PermitRootLogin no" }
+    - { regexp: "^PasswordAuthentication", line: "PasswordAuthentication no" }
+
+- name: Restart SSH
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
