@@ -22,20 +22,19 @@ services:
       - devops-net
 
   jenkins:
-    image: jenkins/jenkins:lts-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     ports:
       - "8080:8080"
+      - "50000:50000"
     volumes:
       - jenkins_data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - JENKINS_OPTS=--prefix=/jenkins
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     networks:
       - devops-net
 
@@ -62,8 +61,6 @@ services:
 
   sonarqube-db:
     image: postgres:15-alpine
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -84,14 +81,16 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--web.route-prefix=/prometheus'
+      - '--web.external-url=${ALB_DNS:-http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com}/prometheus'
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/prometheus/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -104,8 +103,12 @@ services:
       - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=${ALB_DNS:-http://atlas-ai-alb-111188473.ap-south-1.elb.amazonaws.com}/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROUTE_PREFIX=/grafana
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
@@ -118,6 +121,8 @@ services:
 volumes:
   jenkins_data:
   sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
   postgres_data:
   prometheus_data:
   grafana_data:

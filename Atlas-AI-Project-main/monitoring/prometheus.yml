@@ -11,6 +11,11 @@ scrape_configs:
       - targets: ['prometheus:9090']
     metrics_path: /prometheus/metrics
 
+  - job_name: 'atlas-ai'
+    static_configs:
+      - targets: ['atlas-ai:5000']
+    metrics_path: /metrics
+
   - job_name: 'grafana'
     static_configs:
       - targets: ['grafana:3000']

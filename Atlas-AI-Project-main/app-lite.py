@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional
 
+import prometheus_client
 from flask import Flask, jsonify, request, render_template, session
 from flask_cors import CORS
 from flask_session import Session
@@ -44,6 +45,54 @@ app.config["SESSION_USE_SIGNER"] = True
 app.config["SESSION_FILE_DIR"] = str(AtlasConfig.BASE_DIR / "sessions")
 Session(app)
 CORS(app)
+
+REQUEST_COUNT = prometheus_client.Counter(
+    "atlas_ai_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "http_status"],
+)
+REQUEST_LATENCY = prometheus_client.Histogram(
+    "atlas_ai_request_latency_seconds",
+    "Request latency in seconds",
+    ["method", "endpoint"],
+)
+CHAT_REQUESTS = prometheus_client.Counter(
+    "atlas_ai_chat_requests_total",
+    "Total chat requests processed",
+)
+ELIGIBILITY_CHECKS = prometheus_client.Counter(
+    "atlas_ai_eligibility_checks_total",
+    "Total eligibility checks performed",
+)
+GROQ_REQUESTS = prometheus_client.Counter(
+    "atlas_ai_groq_requests_total",
+    "Total Groq AI requests",
+)
+
+
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+
+
+@app.after_request
+def after_request(response):
+    if request.path != "/metrics":
+        REQUEST_COUNT.labels(
+            method=request.method,
+            endpoint=request.path,
+            http_status=response.status_code,
+        ).inc()
+        REQUEST_LATENCY.labels(
+            method=request.method,
+            endpoint=request.path,
+        ).observe(time.time() - request.start_time)
+    return response
+
+
+@app.route("/metrics")
+def metrics():
+    return prometheus_client.generate_latest(), 200, {"Content-Type": "text/plain; charset=utf-8"}
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 
@@ -206,6 +255,8 @@ def chat():
                     processing_time = (time.time() - start_time) * 1000
                     save_conversation(session_id, "assistant", response_text, intent="groq_rag", confidence=0.95)
                     save_audit_event("explanation_generated", session_id, {"source": "groq_rag"})
+                    GROQ_REQUESTS.inc()
+                    CHAT_REQUESTS.inc()
                     return jsonify({
                         "response": response_text,
                         "session_id": session_id,
@@ -232,6 +283,7 @@ def chat():
             confidence=result.get("confidence"),
         )
         save_audit_event("explanation_generated", session_id, {"source": "dialogue_manager", "intent": str(result.get("intent"))})
+        CHAT_REQUESTS.inc()
 
         return jsonify({
             "response": response_text,
@@ -310,6 +362,7 @@ def check_eligibility():
 
     save_eligibility_check(session.get("session_id", "unknown"), visa_type, data, result)
     save_audit_event("eligibility_determined", session.get("session_id", "unknown"), {"visa_type": visa_type, "verdict": result["verdict"]})
+    ELIGIBILITY_CHECKS.inc()
     return jsonify(result)
 
 

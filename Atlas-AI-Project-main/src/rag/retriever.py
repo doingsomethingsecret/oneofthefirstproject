@@ -3,13 +3,17 @@ Atlas AI — Enhanced RAG Retrieval Module
 Advanced retrieval with query expansion, re-ranking, and multi-strategy search.
 """
 
+import logging
 import numpy as np
 import re
 from typing import Optional, List, Dict, Any
 
-from config import RAG_TOP_K
+from src.core.config import AtlasConfig
 from src.rag.embedder import load_index, _load_embed_model
 from src.rag.gov_uk_loader import DocumentChunk
+
+logger = logging.getLogger(__name__)
+RAG_TOP_K = AtlasConfig.RAG_TOP_K
 
 
 # ── Query Expansion Synonyms ──────────────────────────────────────────────────
